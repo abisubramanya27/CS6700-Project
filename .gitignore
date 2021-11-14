@@ -2,3 +2,5 @@
 **/.ipynb_checkpoints
 **/.DS_Store
 **/.replit
+**/venv
+**/__pycache__
