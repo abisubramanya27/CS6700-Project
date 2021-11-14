@@ -31,11 +31,11 @@ class Agent:
         self.prev_obs = None
         self.epsilon = 0.1
         if self.config[0]:
-            self.Q = np.zeros([self.config[1], self.config[2]])
+            self.Q = np.zeros((self.config[1], self.config[2]))
             self.n_obs_space = self.config[1]
             self.n_action_space = self.config[2]
-            self.eta = 0.1
-            self.gma = 0.6
+            self.eta = 0.2  # earlier 0.1
+            self.gma = 1.   # earlier 0.6
         pass
 
     def register_reset_train(self, obs):
@@ -53,6 +53,7 @@ class Agent:
                 self.prev_action = random.randint(0, self.n_action_space-1)
             else:
                 self.prev_action = np.argmax(self.Q[obs,:])
+
             self.prev_obs = obs
             self.n_episodes += 1
         else:
@@ -101,10 +102,7 @@ class Agent:
         """
 
         if self.config[0]:
-            if random.uniform(0, 1) < self.epsilon:
-                action = random.randint(0, self.n_action_space-1)
-            else:
-                action = np.argmax(self.Q[obs,:])
+            action = np.argmax(self.Q[obs,:])
         else:
             raise NotImplementedError
 
@@ -125,10 +123,7 @@ class Agent:
         """
 
         if self.config[0]:
-            if random.uniform(0, 1) < self.epsilon:
-                action = random.randint(0, self.n_action_space-1)
-            else:
-                action = np.argmax(self.Q[obs,:])
+            action = np.argmax(self.Q[obs,:])
         else:
             raise NotImplementedError
         return action
