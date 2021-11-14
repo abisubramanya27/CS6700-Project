@@ -1,5 +1,7 @@
 from config import *
 import time
+import random
+import numpy as np
 
 """
 
@@ -24,6 +26,16 @@ class Agent:
     def __init__(self, env):
         self.env_name = env
         self.config = config[self.env_name]
+        self.n_episodes = 0
+        self.prev_action = None
+        self.prev_obs = None
+        self.epsilon = 0.1
+        if self.config[0]:
+            self.Q = np.zeros([self.config[1], self.config[2]])
+            self.n_obs_space = self.config[1]
+            self.n_action_space = self.config[2]
+            self.eta = 0.1
+            self.gma = 0.6
         pass
 
     def register_reset_train(self, obs):
@@ -36,9 +48,17 @@ class Agent:
             - action - discretized 'action' from raw 'observation'
         """
 
-        return 1
-        raise NotImplementedError
-        return action
+        if self.config[0]:
+            if random.uniform(0, 1) < self.epsilon:
+                self.prev_action = random.randint(0, self.n_action_space-1)
+            else:
+                self.prev_action = np.argmax(self.Q[obs,:])
+            self.prev_obs = obs
+            self.n_episodes += 1
+        else:
+            raise NotImplementedError
+        
+        return self.prev_action
 
     def compute_action_train(self, obs, reward, done, info):
         """
@@ -54,8 +74,21 @@ class Agent:
             - action - discretized 'action' from raw 'observation'
         """
 
-        raise NotImplementedError
-        return action
+        if self.config[0]:
+            self.Q[self.prev_obs,self.prev_action] = self.Q[self.prev_obs,self.prev_action] + \
+                    self.eta*(reward + self.gma*np.max(self.Q[obs,:]) - \
+                        self.Q[self.prev_obs,self.prev_action])
+
+            if random.uniform(0, 1) < self.epsilon:
+                self.prev_action = random.randint(0, self.n_action_space-1)
+            else:
+                self.prev_action = np.argmax(self.Q[obs,:])
+            
+            self.prev_obs = obs
+        else:
+            raise NotImplementedError
+
+        return self.prev_action
 
     def register_reset_test(self, obs):
         """
@@ -67,7 +100,14 @@ class Agent:
             - action - discretized 'action' from raw 'observation'
         """
 
-        raise NotImplementedError
+        if self.config[0]:
+            if random.uniform(0, 1) < self.epsilon:
+                action = random.randint(0, self.n_action_space-1)
+            else:
+                action = np.argmax(self.Q[obs,:])
+        else:
+            raise NotImplementedError
+
         return action
 
     def compute_action_test(self, obs, reward, done, info):
@@ -84,5 +124,11 @@ class Agent:
             - action - discretized 'action' from raw 'observation'
         """
 
-        raise NotImplementedError
+        if self.config[0]:
+            if random.uniform(0, 1) < self.epsilon:
+                action = random.randint(0, self.n_action_space-1)
+            else:
+                action = np.argmax(self.Q[obs,:])
+        else:
+            raise NotImplementedError
         return action
