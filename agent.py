@@ -1,11 +1,8 @@
 from config import *
+import math
 import time
 import random
 import numpy as np
-from model import ActorCritic
-import tensorflow as tf
-from tensorflow.keras.optimizer import Adam
-import tensorflow_probability as tfp
 
 """
 
@@ -27,26 +24,43 @@ Use the state saved in train phase here.
 
 
 class Agent:
+    def convert_a(self, state):
+        a1 = (state[0]+1)*self.nbins//2
+        if a1 == self.nbins:
+            a1 -= 1
+        a2 = (state[2]+1)*self.nbins//2
+        if a2 == self.nbins:
+            a2 -= 1
+        a3 = (state[4]+1)*self.nbins//26
+        if a3 == self.nbins:
+            a3 -= 1
+        a4 = (state[5]+1)*self.nbins//57
+        if a4 == self.nbins:
+            a4 -= 1
+        return int(a1*(self.nbins ** 3) + a2*(self.nbins ** 2) + a3 *(self.nbins) + a4) 
+    def convert_kbc(self, state):
+        if "" in state: 
+            return state.index("")
+        else:
+            return len(state)
+
     def __init__(self, env):
         self.env_name = env
         self.config = config[self.env_name]
         self.n_episodes = 0
         self.prev_action = None
         self.prev_obs = None
-        self.epsilon = 0.1
+        self.epsilon = 0.3
         self.gma = 0.9   # earlier 0.6
+        self.eta = 0.2  # earlier 0.1
         if self.config[0]:
             self.Q = np.zeros((self.config[1], self.config[2]))
             self.n_obs_space = self.config[1]
             self.n_action_space = self.config[2]
-            self.eta = 0.2  # earlier 0.1
         else:
-            self.n_obs_space = self.config[1]
+            self.nbins = 5
+            self.Q = np.zeros((self.nbins ** 4+1, 3))
             self.n_action_space = self.config[2]
-            self.actor_critic = ActorCritic(self.n_action_space)
-            self.lr = 3e-4
-            self.actor_critic.compile(optimizer=Adam(learning_rate=self.lr))
-        pass
 
     def register_reset_train(self, obs):
         """
@@ -58,19 +72,18 @@ class Agent:
             - action - discretized 'action' from raw 'observation'
         """
 
-        if self.config[0]:
-            if random.uniform(0, 1) < self.epsilon:
-                self.prev_action = random.randint(0, self.n_action_space-1)
-            else:
-                self.prev_action = np.argmax(self.Q[obs,:])
-
-            self.prev_obs = obs
-            self.n_episodes += 1
+        if not self.config[0]:
+            obs = self.convert_a(obs)
+        if self.config[0] >= 2:
+            obs = self.convert_kbc(obs)
+        #print(obs)
+        if random.uniform(0, 1) < self.epsilon:
+            self.prev_action = random.randint(0, self.n_action_space-1)
         else:
-            state = tf.convert_to_tensor([obs], dtype=tf.float32)
-            self.prev_v, self.prev_pi = self.actor_critic(state)
-            self.prev_action = tfp.distributions.Categorical(probs=self.prev_pi).sample().numpy()[0]
-        
+            self.prev_action = np.argmax(self.Q[obs,:])
+
+        self.prev_obs = obs
+        self.n_episodes += 1
         return self.prev_action
 
     def compute_action_train(self, obs, reward, done, info):
@@ -86,28 +99,21 @@ class Agent:
         RETURNS     : 
             - action - discretized 'action' from raw 'observation'
         """
+        if not self.config[0]:
+            obs = self.convert_a(obs)
+        if self.config[0] >= 2:
+            obs = self.convert_kbc(obs)
+        #print(obs, self.prev_action)
+        self.Q[self.prev_obs,self.prev_action] = self.Q[self.prev_obs,self.prev_action] + \
+            self.eta*(reward + self.gma*np.max(self.Q[obs,:]) - \
+                self.Q[self.prev_obs,self.prev_action])
 
-        if self.config[0]:
-            self.Q[self.prev_obs,self.prev_action] = self.Q[self.prev_obs,self.prev_action] + \
-                    self.eta*(reward + self.gma*np.max(self.Q[obs,:]) - \
-                        self.Q[self.prev_obs,self.prev_action])
-
-            if random.uniform(0, 1) < self.epsilon:
-                self.prev_action = random.randint(0, self.n_action_space-1)
-            else:
-                self.prev_action = np.argmax(self.Q[obs,:])
-            
-            self.prev_obs = obs
+        if random.uniform(0, 1) < self.epsilon:
+            self.prev_action = random.randint(0, self.n_action_space-1)
         else:
-            state = tf.convert_to_tensor([obs], dtype=tf.float32)
-            reward = tf.convert_to_tensor(reward, dtype=tf.float32)
-
-            with tf.GradientTape(persistent=True) as tape:
-                v, pi = self.actor_critic(state)
-                v = tf.squeeze(v)
-                
-
-
+            self.prev_action = np.argmax(self.Q[obs,:])
+        
+        self.prev_obs = obs
         return self.prev_action
 
     def register_reset_test(self, obs):
@@ -120,11 +126,11 @@ class Agent:
             - action - discretized 'action' from raw 'observation'
         """
 
-        if self.config[0]:
-            action = np.argmax(self.Q[obs,:])
-        else:
-            raise NotImplementedError
-
+        if not self.config[0]:
+            obs = self.convert_a(obs)
+        if self.config[0] >= 2:
+            obs = self.convert_kbc(obs)
+        action = np.argmax(self.Q[obs,:])
         return action
 
     def compute_action_test(self, obs, reward, done, info):
@@ -141,8 +147,9 @@ class Agent:
             - action - discretized 'action' from raw 'observation'
         """
 
-        if self.config[0]:
-            action = np.argmax(self.Q[obs,:])
-        else:
-            raise NotImplementedError
+        if not self.config[0]:
+            obs = self.convert_a(obs)
+        if self.config[0] >= 2:
+            obs = self.convert_kbc(obs)
+        action = np.argmax(self.Q[obs,:])
         return action

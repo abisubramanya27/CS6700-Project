@@ -54,8 +54,8 @@ if __name__ == "__main__":
 
     agent = Agent(ENV_NAME)
 
-    print(env.action_space)
-    print(env.observation_space)
+    #print(env.action_space)
+    #print(env.observation_space)
 
     for i in tqdm(range(N_TRAIN_EPISODES[ENV_NAME])):
         train(agent, env)
