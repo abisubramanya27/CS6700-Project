@@ -46,6 +46,6 @@ class Policy:
 
         return grad_log_p
 
-    def update(self, state, action, G):
+    def update(self, state, action, G, grad_log_p):
         # update theta for given state, action, G 
         self.theta[state] += self.alpha * G * self.grad_log_p(state, action)

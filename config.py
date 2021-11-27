@@ -1,1 +1,24 @@
-config = {"acrobot": [0, 6, 3], "taxi": [1, 500, 6], "kbca": [0, None, 2], "kbcb": [0, None, 2], "kbcc": [0, None, 3]}
+config = {
+    "acrobot": {
+        "low": [-4., -4., -12.6, -28.3],
+        "high": [4., 4., 12.6, 28.3],
+        "nbins": [5, 5, 10, 10],
+        "n_actions": 3
+    },
+    "taxi": {
+        "state_space": [500],
+        "n_actions": 6
+    },
+    "kbca": {
+        "state_space": [17, 2],
+        "n_actions": 2
+    },
+    "kbcb": {
+        "state_space": [17, 2],
+        "n_actions": 2
+    },
+    "kbcc": {
+        "state_space": [17, 2],
+        "n_actions": 3
+    }
+}
