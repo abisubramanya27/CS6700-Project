@@ -20,8 +20,9 @@ class Policy:
         probs = np.zeros((self.n_actions, ))
         for act in range(self.n_actions):
             act_vector = encode_vector(act, self.n_actions)
-            probs[act] = np.exp(np.dot(self.theta[state], act_vector))
+            probs[act] = np.dot(self.theta[state], act_vector)
 
+        probs = np.exp(probs - np.max(probs))
         return probs / np.sum(probs)
 
     def act(self, state):

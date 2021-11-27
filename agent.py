@@ -67,14 +67,18 @@ class Agent:
         self.grads_log_p = []
         self.gma = 1.0
         if self.env_name == 'acrobot':
-            self.alpha = 5e-6
+            self.alpha = 5e-4
+            self.whiten = False
             self.get_state = self.get_state_a
             self.policy = Policy(np.zeros((*self.config['nbins'], self.config['n_actions'])), self.config['n_actions'], self.alpha)
         elif self.env_name == 'taxi':
+            self.alpha = 1e-1
+            self.whiten = True
             self.get_state = self.get_state_t
             self.policy = Policy(np.zeros((*self.config['state_space'], self.config['n_actions'])), self.config['n_actions'], self.alpha)
         else:
             self.alpha = 5e-6
+            self.whiten = False
             self.get_state = self.get_state_kbc
             self.policy = Policy(np.zeros((*self.config['state_space'], self.config['n_actions'])), self.config['n_actions'], self.alpha)
 
@@ -126,10 +130,11 @@ class Agent:
                 self.G.append(self.G[-1]*self.gma + self.rewards[i])
             self.G = np.array(self.G[::-1])
 
-            # G_bar = np.mean(self.G)
-            # G_sigma = np.std(self.G)
-            # if G_sigma > 0:
-            #     self.G = (self.G - G_bar) / G_sigma
+            if self.whiten:
+                G_bar = np.mean(self.G)
+                G_sigma = np.std(self.G)
+                if G_sigma > 0:
+                    self.G = (self.G - G_bar) / G_sigma
 
             for i in range(len(self.rewards)):
                 self.policy.update(self.states[i], self.actions[i], self.G[i], self.grads_log_p[i])
