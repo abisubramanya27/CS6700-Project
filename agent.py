@@ -45,9 +45,19 @@ class Agent:
     
     def convert_kbc(self, state):
         if "" in state: 
-            return state.index("")
+            l1 = state.index("")
+            if l1 == 0:
+                return 0
+            else:
+                if state[l1-1] == 1:
+                    return l1 + len(state)
+                else:
+                    return l1
         else:
-            return len(state)
+            if state[-1] == 1:
+                return 2*len(state)
+            else:
+                return len(state)
     
     def convert(self, state):
         #print(state)
@@ -65,9 +75,9 @@ class Agent:
         self.prev_action = None
         self.prev_obs = None
         epsilon_dict = {
-                0: 0.6,
+                0: 0.7,
                 1: 0.3,
-                2: 0.3,
+                2: 0.5,
                 3: 0.3,
                 4: 0.3
                 }
@@ -75,15 +85,15 @@ class Agent:
         gamma_dict = {
                 0: 0.9,
                 1: 0.9,
-                2: 0.9,
+                2: 1,
                 3: 0.9,
                 4: 0.9
                 }
         self.gma = gamma_dict[self.config[0]]   
         eta_dict = {
-                0: 0.2,
+                0: 0.6,
                 1: 0.3,
-                2: 0.2,
+                2: 0.4,
                 3: 0.2,
                 4: 0.2
                 }
@@ -95,8 +105,8 @@ class Agent:
             self.n_action_space = self.config[2]
         else:
             self.nbins = 4
-            #self.Q = np.zeros((self.nbins ** 4+1, 3))
-            self.Q = [[0]*3]*(self.nbins ** 4+1)
+            self.Q = np.zeros((self.nbins ** 4+1, 3))
+            #self.Q = [[0]*3]*(self.nbins ** 4+1)
             self.n_action_space = self.config[2]
 
     def register_reset_train(self, obs):
@@ -119,7 +129,7 @@ class Agent:
 
         self.prev_obs = obs
         self.n_episodes += 1
-        return self.prev_action
+        return int(self.prev_action)
 
     def compute_action_train(self, obs, reward, done, info):
         """
@@ -147,7 +157,7 @@ class Agent:
             #self.prev_action = self.argmax(self.Q[obs])
         
         self.prev_obs = obs
-        return self.prev_action
+        return int(self.prev_action)
 
     def register_reset_test(self, obs):
         """
@@ -163,7 +173,7 @@ class Agent:
         #print(self.Q)
         action = np.argmax(self.Q[obs,:])
         #action = self.argmax(self.Q[obs])
-        return action
+        return int(action)
 
     def compute_action_test(self, obs, reward, done, info):
         """
@@ -183,4 +193,4 @@ class Agent:
         action = np.argmax(self.Q[obs,:])
         #action = self.argmax(self.Q[obs])
 
-        return action
+        return int(action)

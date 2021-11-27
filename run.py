@@ -17,6 +17,7 @@ def train(agent, env):
     action = agent.register_reset_train(obs)
     done = False
     while not done:
+        #print(type(action))
         obs, reward, done, info = env.step(action)
         action = agent.compute_action_train(obs, reward, done, info)
 
