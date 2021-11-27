@@ -67,8 +67,8 @@ class Agent:
         self.grads_log_p = []
         self.gma = 1.0
         if self.env_name == 'acrobot':
-            self.alpha = 5e-4
-            self.whiten = False
+            self.alpha = 1e-3
+            self.whiten = True
             self.get_state = self.get_state_a
             self.policy = Policy(np.zeros((*self.config['nbins'], self.config['n_actions'])), self.config['n_actions'], self.alpha)
         elif self.env_name == 'taxi':
@@ -77,8 +77,8 @@ class Agent:
             self.get_state = self.get_state_t
             self.policy = Policy(np.zeros((*self.config['state_space'], self.config['n_actions'])), self.config['n_actions'], self.alpha)
         else:
-            self.alpha = 5e-6
-            self.whiten = False
+            self.alpha = 1e-5 #5e-6
+            self.whiten = True
             self.get_state = self.get_state_kbc
             self.policy = Policy(np.zeros((*self.config['state_space'], self.config['n_actions'])), self.config['n_actions'], self.alpha)
 
