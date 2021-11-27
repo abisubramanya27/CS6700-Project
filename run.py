@@ -52,16 +52,16 @@ if __name__ == "__main__":
         env = aicrowd_gym.make("gym_bellman:kbc-c-v0")
 
 
-    agent = Agent(ENV_NAME)
+    # agent = Agent(ENV_NAME)
 
     print(env.action_space)
     print(env.observation_space)
 
-    for i in tqdm(range(N_TRAIN_EPISODES[ENV_NAME])):
-        train(agent, env)
+    # for i in tqdm(range(N_TRAIN_EPISODES[ENV_NAME])):
+    #     train(agent, env)
 
-    rewards = []
-    for i in tqdm(range(N_EVAL_EPISODES)):
-        rewards.append(evaluate(agent, env))
+    # rewards = []
+    # for i in tqdm(range(N_EVAL_EPISODES)):
+    #     rewards.append(evaluate(agent, env))
 
-    print(f"Mean reward on your agent for {ENV_NAME} is {np.mean(rewards)}")
+    # print(f"Mean reward on your agent for {ENV_NAME} is {np.mean(rewards)}")

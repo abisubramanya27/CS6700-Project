@@ -2,10 +2,6 @@ from config import *
 import time
 import random
 import numpy as np
-from model import ActorCritic
-import tensorflow as tf
-from tensorflow.keras.optimizer import Adam
-import tensorflow_probability as tfp
 
 """
 
@@ -41,11 +37,7 @@ class Agent:
             self.n_action_space = self.config[2]
             self.eta = 0.2  # earlier 0.1
         else:
-            self.n_obs_space = self.config[1]
-            self.n_action_space = self.config[2]
-            self.actor_critic = ActorCritic(self.n_action_space)
-            self.lr = 3e-4
-            self.actor_critic.compile(optimizer=Adam(learning_rate=self.lr))
+            raise NotImplementedError
         pass
 
     def register_reset_train(self, obs):
@@ -67,9 +59,7 @@ class Agent:
             self.prev_obs = obs
             self.n_episodes += 1
         else:
-            state = tf.convert_to_tensor([obs], dtype=tf.float32)
-            self.prev_v, self.prev_pi = self.actor_critic(state)
-            self.prev_action = tfp.distributions.Categorical(probs=self.prev_pi).sample().numpy()[0]
+            raise NotImplementedError
         
         return self.prev_action
 
@@ -99,14 +89,7 @@ class Agent:
             
             self.prev_obs = obs
         else:
-            state = tf.convert_to_tensor([obs], dtype=tf.float32)
-            reward = tf.convert_to_tensor(reward, dtype=tf.float32)
-
-            with tf.GradientTape(persistent=True) as tape:
-                v, pi = self.actor_critic(state)
-                v = tf.squeeze(v)
-                
-
+            raise NotImplementedError
 
         return self.prev_action
 
