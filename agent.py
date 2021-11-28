@@ -76,13 +76,13 @@ class Agent:
         if self.env_name == 'acrobot':
             self.eps = 0.5
             self.eta = 0.8
-            self.alpha = 5e-6
+            self.alpha = 2e-3
             self.whiten = True
             self.get_state = lambda obs: self.get_state_a(obs, False, False)
             # self.policy = Policy(np.zeros((*self.config['nbins'], self.config['n_actions'])), self.config['n_actions'], self.alpha)
             self.policy = LinearPolicy(
-                np.random.rand(self.config['n_actions'], 6)/1000,
-                np.random.rand(self.config['n_actions'])/1000,
+                np.random.rand(self.config['n_actions'], 6)/10,
+                np.random.rand(self.config['n_actions'])/10,
                 self.config['n_actions'], self.alpha
             )
             self.Q = np.random.rand(*self.config['nbins'], self.config['n_actions'])/1000
