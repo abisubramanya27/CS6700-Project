@@ -9,11 +9,10 @@ def encode_vector(index, dim):
 
 class LinearPolicy:
 
-    def __init__(self, W, b, n_actions, alpha):
+    def __init__(self, W, b, n_actions):
         # Initialize paramters W, b; learning rate alpha and discount factor gma
         self.W = W
         self.b = b
-        self.alpha = alpha
         self.n_actions = n_actions
 
     def probs(self, state):
@@ -45,7 +44,7 @@ class LinearPolicy:
 
         return grad_log_p
 
-    def update(self, state, action, G, grad_log_p):
-        # update W, b for given state, action, G 
-        self.W += self.alpha * G * grad_log_p[0]
-        self.b += self.alpha * G * grad_log_p[1]
+    def update(self, state, action, G, grad_log_p, alpha):
+        # update W, b for given state, action, G
+        self.W += alpha * G * grad_log_p[0]
+        self.b += alpha * G * grad_log_p[1]

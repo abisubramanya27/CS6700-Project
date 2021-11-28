@@ -9,10 +9,9 @@ def encode_vector(index, dim):
 
 class Policy:
 
-    def __init__(self, theta, n_actions, alpha):
+    def __init__(self, theta, n_actions):
         # Initialize paramters theta, learning rate alpha and discount factor gma
         self.theta = theta
-        self.alpha = alpha
         self.n_actions = n_actions
 
     def probs(self, state):
@@ -47,6 +46,6 @@ class Policy:
 
         return grad_log_p
 
-    def update(self, state, action, G, grad_log_p):
+    def update(self, state, action, G, grad_log_p, alpha):
         # update theta for given state, action, G 
-        self.theta[state] += self.alpha * G * grad_log_p
+        self.theta[state] += alpha * G * grad_log_p
