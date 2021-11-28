@@ -107,13 +107,13 @@ class Agent:
         else:
             self.eps = 0.3
             self.eta = 0.1
-            self.alpha = 5e-6
+            self.alpha = 1e-7
             self.whiten = False
             self.get_state = lambda obs: self.get_state_kbc(obs, False)
             # self.policy = Policy(np.random.rand(*self.config['state_space'], self.config['n_actions'])/1000, self.config['n_actions'])
             self.policy = LinearPolicy(
-                np.random.rand(self.config['n_actions'],len(self.config['state_space']))/100,
-                np.random.rand(self.config['n_actions'])/100,
+                np.random.rand(self.config['n_actions'],len(self.config['state_space']))/10,
+                np.random.rand(self.config['n_actions'])/10,
                 self.config['n_actions']
             )
             self.Q = np.random.rand(*self.config['state_space'], self.config['n_actions'])/1000
