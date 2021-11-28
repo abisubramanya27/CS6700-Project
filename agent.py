@@ -68,8 +68,8 @@ class Agent:
         if self.env_name == 'acrobot':
             self.eps = 0.5
             self.eta = 0.8
-            self.alpha = 1e-3
-            self.whiten = True
+            self.alpha = 5e-6
+            self.whiten = False
             self.get_state = self.get_state_a
             self.policy = Policy(np.zeros((*self.config['nbins'], self.config['n_actions'])), self.config['n_actions'], self.alpha)
             self.Q = np.random.rand(*self.config['nbins'], self.config['n_actions'])/1000
