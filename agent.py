@@ -59,7 +59,10 @@ class Agent:
     def get_state_t(self, obs):
         return (obs, )
     
-    def get_state_kbc(self, obs):
+    def get_state_kbc(self, obs, reduce=True):
+        if not reduce:
+            return tuple(-2 if e == "" else e for e in obs)
+
         obs = list(obs) + [""]
         ind = obs.index("")
         return (ind, 0 if ind == 0 else obs[ind-1]+1)
@@ -81,7 +84,7 @@ class Agent:
             self.get_state = lambda obs: self.get_state_a(obs, False, False)
             # self.policy = Policy(np.zeros((*self.config['nbins'], self.config['n_actions'])), self.config['n_actions'], self.alpha)
             self.policy = LinearPolicy(
-                np.random.rand(self.config['n_actions'], 6)/10,
+                np.random.rand(self.config['n_actions'], self.config['dim_state'])/10,
                 np.random.rand(self.config['n_actions'])/10,
                 self.config['n_actions'], self.alpha
             )
@@ -100,9 +103,14 @@ class Agent:
             self.eps = 0.3
             self.eta = 0.1
             self.alpha = 5e-6
-            self.whiten = False
-            self.get_state = self.get_state_kbc
+            self.whiten = True
+            self.get_state = lambda obs: self.get_state_kbc(obs, True)
             self.policy = Policy(np.random.rand(*self.config['state_space'], self.config['n_actions'])/1000, self.config['n_actions'], self.alpha)
+            # self.policy = LinearPolicy(
+            #     np.random.rand(self.config['n_actions'],self.config['dim_state'])/1000,
+            #     np.random.rand(self.config['n_actions'])/1000,
+            #     self.config['n_actions'], self.alpha
+            # )
             self.Q = np.random.rand(*self.config['state_space'], self.config['n_actions'])/1000
             self.choice = 1
 
@@ -119,6 +127,7 @@ class Agent:
 
         state = self.get_state(obs)
         self.states = [state]
+        self.n_step = 0
         if self.choice:
             action, _ = self.policy.act(state)
             self.grads_log_p = [self.policy.grad_log_p(state, action)]
@@ -149,10 +158,12 @@ class Agent:
 
         state = self.get_state(obs)
         self.states.append(state)
+        self.n_step += 1
         if self.choice:
             action, _ = self.policy.act(state)
             self.grads_log_p.append(self.policy.grad_log_p(state, action))
         else:
+            self.eta = 50 / (50 + self.n_step)
             self.Q[self.states[-2] + (self.actions[-1],)] = (1-self.eta)*self.Q[self.states[-2] + (self.actions[-1],)] + \
                     self.eta*(reward + self.gma*np.max(self.Q[state]))
 
