@@ -3,6 +3,7 @@ import time
 import random
 import numpy as np
 from policy import Policy
+from linear_policy import LinearPolicy
 
 def cos_sin_to_theta(cos, sin):
     return np.arctan2(cos, sin)
@@ -34,11 +35,17 @@ Use the state saved in train phase here.
 
 
 class Agent:
-    def get_state_a(self, obs):
+    def get_state_a(self, obs, reduce=True, bin=True):
+        if not reduce:
+            return tuple(obs)
+
         new_obs = [cos_sin_to_theta(obs[0], obs[1]),
                    cos_sin_to_theta(obs[2], obs[3]),
                    obs[4], obs[5]
                   ]
+        
+        if not bin:
+            return tuple(new_obs)
         
         return tuple(
             bin(
@@ -70,9 +77,14 @@ class Agent:
             self.eps = 0.5
             self.eta = 0.8
             self.alpha = 5e-6
-            self.whiten = False
-            self.get_state = self.get_state_a
-            self.policy = Policy(np.zeros((*self.config['nbins'], self.config['n_actions'])), self.config['n_actions'], self.alpha)
+            self.whiten = True
+            self.get_state = lambda obs: self.get_state_a(obs, False, False)
+            # self.policy = Policy(np.zeros((*self.config['nbins'], self.config['n_actions'])), self.config['n_actions'], self.alpha)
+            self.policy = LinearPolicy(
+                np.random.rand(self.config['n_actions'], 6)/1000,
+                np.random.rand(self.config['n_actions'])/1000,
+                self.config['n_actions'], self.alpha
+            )
             self.Q = np.random.rand(*self.config['nbins'], self.config['n_actions'])/1000
             self.choice = 1
         elif self.env_name == 'taxi':
