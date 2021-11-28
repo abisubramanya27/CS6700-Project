@@ -55,7 +55,7 @@ class Agent:
     def get_state_kbc(self, obs):
         obs = list(obs) + [""]
         ind = obs.index("")
-        return (ind, 0 if ind == 0 else (obs[ind-1]+1)//2)
+        return (ind, 0 if ind == 0 else obs[ind-1]+1)
 
     def __init__(self, env):
         self.env_name = env
@@ -63,24 +63,23 @@ class Agent:
         self.actions = []
         self.states = []
         self.rewards = []
-        self.G = []
-        self.grads_log_p = []
         self.gma = 1.0
+        self.n_step = 0
         if self.env_name == 'acrobot':
-            self.alpha = 1e-3
-            self.whiten = True
+            self.alpha = 1e-4
             self.get_state = self.get_state_a
             self.policy = Policy(np.zeros((*self.config['nbins'], self.config['n_actions'])), self.config['n_actions'], self.alpha)
+            self.Q = np.random.rand(*self.config['nbins'], self.config['n_actions'])/100
         elif self.env_name == 'taxi':
-            self.alpha = 1e-1
-            self.whiten = True
+            self.alpha = 1e-5
             self.get_state = self.get_state_t
             self.policy = Policy(np.zeros((*self.config['state_space'], self.config['n_actions'])), self.config['n_actions'], self.alpha)
+            self.Q = np.random.rand(*self.config['state_space'], self.config['n_actions'])/100
         else:
-            self.alpha = 1e-5 #5e-6
-            self.whiten = True
+            self.alpha = 5e-5 #5e-6
             self.get_state = self.get_state_kbc
             self.policy = Policy(np.zeros((*self.config['state_space'], self.config['n_actions'])), self.config['n_actions'], self.alpha)
+            self.Q = np.random.rand(*self.config['state_space'], self.config['n_actions'])/100
 
 
     def register_reset_train(self, obs):
@@ -97,9 +96,7 @@ class Agent:
         self.states = [state]
         action, _ = self.policy.act(state)
         self.actions = [action]
-        self.grads_log_p = [self.policy.grad_log_p(state, action)]
         self.rewards = []
-        self.G = []
 
         return action
 
@@ -122,22 +119,19 @@ class Agent:
         action, _ = self.policy.act(state)
         self.actions.append(action)
         self.rewards.append(reward)
-        self.grads_log_p.append(self.policy.grad_log_p(state, action))
+        self.n_step += 1
+        beta = 50 / (50+self.n_step)
+        self.Q[self.states[-2] + (self.actions[-2],)] = (1-beta)*self.Q[self.states[-2] + (self.actions[-2],)] + \
+                    beta*(reward + self.gma*np.max(self.Q[self.states[-2],:]))
 
         if done:
-            self.G = [self.rewards[-1]]
+            G = [self.rewards[-1]]
             for i in range(len(self.rewards)-2, -1, -1):
-                self.G.append(self.G[-1]*self.gma + self.rewards[i])
-            self.G = np.array(self.G[::-1])
-
-            if self.whiten:
-                G_bar = np.mean(self.G)
-                G_sigma = np.std(self.G)
-                if G_sigma > 0:
-                    self.G = (self.G - G_bar) / G_sigma
+                G.append(G[-1]*self.gma + self.rewards[i])
+            G = G[::-1]
 
             for i in range(len(self.rewards)):
-                self.policy.update(self.states[i], self.actions[i], self.G[i], self.grads_log_p[i])
+                self.policy.update(self.states[i], self.actions[i], G[i] - np.max(self.Q[self.states[i],:]))
 
         return action
 

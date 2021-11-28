@@ -10,15 +10,15 @@ config = {
         "n_actions": 6
     },
     "kbca": {
-        "state_space": [17, 2],
+        "state_space": [17, 3],
         "n_actions": 2
     },
     "kbcb": {
-        "state_space": [17, 2],
+        "state_space": [17, 3],
         "n_actions": 2
     },
     "kbcc": {
-        "state_space": [17, 2],
+        "state_space": [17, 3],
         "n_actions": 3
     }
 }
