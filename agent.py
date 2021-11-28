@@ -50,11 +50,15 @@ class Agent:
                 return 0
             else:
                 if state[l1-1] == 1:
+                    return l1 + 2*len(state)
+                elif state[l1-1] == 0:
                     return l1 + len(state)
                 else:
                     return l1
         else:
             if state[-1] == 1:
+                return 3*len(state)
+            elif state[-1] == 0:
                 return 2*len(state)
             else:
                 return len(state)
@@ -74,6 +78,7 @@ class Agent:
         self.n_episodes = 0
         self.prev_action = None
         self.prev_obs = None
+        self.stage = 0
         epsilon_dict = {
                 0: 0.7,
                 1: 0.5,
@@ -90,14 +95,15 @@ class Agent:
                 4: 0.9
                 }
         self.gma = gamma_dict[self.config[0]]   
-        eta_dict = {
-                0: 0.6,
-                1: 0.6,
+        self.eta_dict = {
+                0: 0.8,
+                1: 0.9,
                 2: 0.4,
                 3: 0.2,
                 4: 0.2
                 }
-        self.eta = eta_dict[self.config[0]]   
+        self.eta = self.eta_dict[self.config[0]]   
+        self.decay_rate = 0.02
         if self.config[0]:
             self.Q = np.zeros((self.config[1], self.config[2]))
             #self.Q = [[0]*self.config[2]]*self.config[1]
@@ -126,9 +132,12 @@ class Agent:
         else:
             self.prev_action = np.argmax(self.Q[obs,:])
             #self.prev_action = self.argmax(self.Q[obs])
-
+        
         self.prev_obs = obs
         self.n_episodes += 1
+        self.stage = 0
+        self.eta = self.eta_dict[self.config[0]]
+
         return int(self.prev_action)
 
     def compute_action_train(self, obs, reward, done, info):
@@ -144,19 +153,37 @@ class Agent:
         RETURNS     : 
             - action - discretized 'action' from raw 'observation'
         """
+        #print(obs, reward)
         obs = self.convert(obs)
-        #print(obs, self.prev_action)
         self.Q[self.prev_obs,self.prev_action] = self.Q[self.prev_obs,self.prev_action] + self.eta*(reward + self.gma*np.max(self.Q[obs,:]) - self.Q[self.prev_obs,self.prev_action])
 
         #self.Q[self.prev_obs][self.prev_action] = self.Q[self.prev_obs][self.prev_action] + self.eta*(reward + self.gma*max(self.Q[obs]) - self.Q[self.prev_obs][self.prev_action])
 
         if random.uniform(0, 1) < self.epsilon:
-            self.prev_action = random.randint(0, self.n_action_space-1)
+            if self.config[0] in [2,3,4]:
+                if self.n_episodes <= 900:
+                    self.prev_action = 1
+                else:
+                    self.prev_action = random.randint(0, self.n_action_space-1)
+            else:
+                self.prev_action = random.randint(0, self.n_action_space-1)
+            if self.config[0] == 0:
+                if self.n_episodes<=1000 and (self.n_episodes//5)%2:
+                    self.prev_action = 1
+                elif self.n_episodes <=1000:
+                    self.prev_action = -1
+                else:
+                    self.prev_action = random.randint(0, self.n_action_space-1)
         else:
             self.prev_action = np.argmax(self.Q[obs,:])
             #self.prev_action = self.argmax(self.Q[obs])
         
         self.prev_obs = obs
+        self.stage += 1
+
+        if self.config[0] == 1:
+            self.eta = 50/(50 + self.stage)
+            self.eps = 10/(10 + self.stage)
         return int(self.prev_action)
 
     def register_reset_test(self, obs):
