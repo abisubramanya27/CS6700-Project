@@ -60,14 +60,11 @@ class Agent:
         return (obs, )
     
     def get_state_kbc(self, obs, reduce=True):
-        # if not reduce:
-        #     return tuple(-2 if e == "" else e for e in obs)
+        if not reduce:
+            return tuple(0 if e == "" else e for e in obs)
 
         obs = list(obs) + [""]
         ind = obs.index("")
-        if not reduce:
-            return (ind, 0 if ind == 0 else obs[ind-1])
-
         return (ind, 0 if ind == 0 else obs[ind-1]+1)
 
 
@@ -78,7 +75,7 @@ class Agent:
         self.states = []
         self.rewards = []
         self.grads_log_p = []
-        self.gma = 1.0
+        self.gma = 1.
         self.n_step = 0
         self.n_episode = 0
         if self.env_name == 'acrobot':
@@ -107,15 +104,15 @@ class Agent:
         else:
             self.eps = 0.3
             self.eta = 0.1
-            self.alpha = 1e-7
-            self.whiten = False
-            self.get_state = lambda obs: self.get_state_kbc(obs, False)
-            # self.policy = Policy(np.random.rand(*self.config['state_space'], self.config['n_actions'])/1000, self.config['n_actions'])
-            self.policy = LinearPolicy(
-                np.random.rand(self.config['n_actions'],len(self.config['state_space']))/10,
-                np.random.rand(self.config['n_actions'])/10,
-                self.config['n_actions']
-            )
+            self.alpha = 5e-6
+            self.whiten = True
+            self.get_state = lambda obs: self.get_state_kbc(obs, True)
+            self.policy = Policy(np.random.rand(*self.config['state_space'], self.config['n_actions'])/1000, self.config['n_actions'])
+            # self.policy = LinearPolicy(
+            #     np.random.rand(self.config['n_actions'],self.config['dim_state'])/100,
+            #     np.random.rand(self.config['n_actions'])/100,
+            #     self.config['n_actions']
+            # )
             self.Q = np.random.rand(*self.config['state_space'], self.config['n_actions'])/1000
             self.choice = 1
 
@@ -171,7 +168,7 @@ class Agent:
             action, _ = self.policy.act(state)
             self.grads_log_p.append(self.policy.grad_log_p(state, action))
         else:
-            self.eta = max(50 / (50 + self.n_step), 0.1)
+            self.eta = max(80 / (80 + self.n_step), 0.5)
             self.eps = max(10 / (10 + self.n_step), 0.1)
             self.Q[self.states[-2] + (self.actions[-1],)] = (1-self.eta)*self.Q[self.states[-2] + (self.actions[-1],)] + \
                     self.eta*(reward + self.gma*np.max(self.Q[state]))
@@ -211,30 +208,12 @@ class Agent:
             - action - discretized 'action' from raw 'observation'
         """
 
-        # state = self.get_state(obs)
-        # if self.choice:
-        #     action, _ = self.policy.act(state)
-        # else:
-        #     action = np.argmax(self.Q[state])
-
-        # return action
-
-        self.n_episode += 1
-        self.n_step = 0
         state = self.get_state(obs)
-        self.states = [state]
         if self.choice:
             action, _ = self.policy.act(state)
-            self.grads_log_p = [self.policy.grad_log_p(state, action)]
-            self.rewards = []
-            self.G = []
         else:
-            if random.uniform(0, 1) < self.eps:
-                action = random.randint(0, self.config['n_actions']-1)
-            else:
-                action = np.argmax(self.Q[state])
+            action = np.argmax(self.Q[state])
 
-        self.actions = [action]
         return action
 
     def compute_action_test(self, obs, reward, done, info):
@@ -251,47 +230,10 @@ class Agent:
             - action - discretized 'action' from raw 'observation'
         """
 
-        # state = self.get_state(obs)
-        # if self.choice:
-        #     action, _ = self.policy.act(state)
-        # else:
-        #     action = np.argmax(self.Q[state])
-        
-        # return action
-
         state = self.get_state(obs)
-        self.states.append(state)
-        self.n_step += 1/5
         if self.choice:
             action, _ = self.policy.act(state)
-            self.grads_log_p.append(self.policy.grad_log_p(state, action))
         else:
-            self.eta = max(50 / (50 + self.n_step), 0.1)
-            self.eps = 0
-            self.Q[self.states[-2] + (self.actions[-1],)] = (1-self.eta)*self.Q[self.states[-2] + (self.actions[-1],)] + \
-                    self.eta*(reward + self.gma*np.max(self.Q[state]))
-
-            if random.uniform(0, 1) < self.eps:
-                action = random.randint(0, self.config['n_actions']-1)
-            else:
-                action = np.argmax(self.Q[state])
-
-        self.actions.append(action)
-        self.rewards.append(reward)
-
-        if done and self.choice:
-            self.G = [self.rewards[-1]]
-            for i in range(len(self.rewards)-2, -1, -1):
-                self.G.append(self.G[-1]*self.gma + self.rewards[i])
-            self.G = np.array(self.G[::-1])
-
-            if self.whiten:
-                G_bar = np.mean(self.G)
-                G_sigma = np.std(self.G)
-                if G_sigma > 0:
-                    self.G = (self.G - G_bar) / G_sigma
-
-            for i in range(len(self.rewards)):
-                self.policy.update(self.states[i], self.actions[i], self.G[i], self.grads_log_p[i], self.alpha)
-
+            action = np.argmax(self.Q[state])
+        
         return action
