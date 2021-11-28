@@ -63,6 +63,7 @@ class Agent:
         self.actions = []
         self.states = []
         self.rewards = []
+        self.grads_log_p = []
         self.gma = 1.0
         self.n_step = 0
         if self.env_name == 'acrobot':
@@ -91,7 +92,7 @@ class Agent:
             self.get_state = self.get_state_kbc
             self.policy = Policy(np.random.rand(*self.config['state_space'], self.config['n_actions'])/1000, self.config['n_actions'], self.alpha)
             self.Q = np.random.rand(*self.config['state_space'], self.config['n_actions'])/1000
-            self.choice = 0
+            self.choice = 1
 
 
     def register_reset_train(self, obs):
@@ -108,6 +109,7 @@ class Agent:
         self.states = [state]
         if self.choice:
             action, _ = self.policy.act(state)
+            self.grads_log_p = [self.policy.grad_log_p(state, action)]
             self.rewards = []
             self.G = []
         else:
@@ -137,6 +139,7 @@ class Agent:
         self.states.append(state)
         if self.choice:
             action, _ = self.policy.act(state)
+            self.grads_log_p.append(self.policy.grad_log_p(state, action))
         else:
             self.Q[self.states[-2] + (self.actions[-1],)] = (1-self.eta)*self.Q[self.states[-2] + (self.actions[-1],)] + \
                     self.eta*(reward + self.gma*np.max(self.Q[state]))
@@ -162,7 +165,7 @@ class Agent:
                     self.G = (self.G - G_bar) / G_sigma
 
             for i in range(len(self.rewards)):
-                self.policy.update(self.states[i], self.actions[i], self.G[i])
+                self.policy.update(self.states[i], self.actions[i], self.G[i], self.grads_log_p[i])
 
         return action
 
