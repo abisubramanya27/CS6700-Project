@@ -76,7 +76,7 @@ class Agent:
         self.prev_obs = None
         epsilon_dict = {
                 0: 0.7,
-                1: 0.3,
+                1: 0.5,
                 2: 0.5,
                 3: 0.3,
                 4: 0.3
@@ -84,7 +84,7 @@ class Agent:
         self.epsilon = epsilon_dict[self.config[0]]
         gamma_dict = {
                 0: 0.9,
-                1: 0.9,
+                1: 1,
                 2: 1,
                 3: 0.9,
                 4: 0.9
@@ -92,7 +92,7 @@ class Agent:
         self.gma = gamma_dict[self.config[0]]   
         eta_dict = {
                 0: 0.6,
-                1: 0.3,
+                1: 0.6,
                 2: 0.4,
                 3: 0.2,
                 4: 0.2
