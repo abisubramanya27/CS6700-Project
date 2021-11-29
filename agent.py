@@ -219,9 +219,9 @@ class Agent:
             # self.eta = min(5e-6 * 2 ** self.n_step, 0.5)
             self.eps = max(3 / (3 + self.n_step), 0.1)
             if self.actions[-1] == 1:
-                reward += (0.5 ** (self.states[-2][0]) - self.gma * 0.5 ** (state[0])) * 1e8
+                reward += (0.5 ** (self.states[-2][0])) * 1e8
             else:
-                reward += 1e5
+                reward += 5e1
         
         elif self.env_name == 'taxi':
             self.eta = max(80 / (80 + self.n_step), 0.5)
@@ -265,7 +265,7 @@ class Agent:
                 elif self.env_name == 'kbcb':
                     self.alpha = min(5e-9 * 2 ** (i), 1e-6)
                 elif self.env_name == 'kbcc':
-                    self.alpha = min(1e-8 * 2 ** (i), 1e-6)
+                    self.alpha = min(5e-9 * 2 ** (i), 1e-6)
                 elif self.env_name == 'acrobot':
                     #self.alpha = max()
                     pass
