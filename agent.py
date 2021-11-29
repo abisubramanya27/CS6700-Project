@@ -101,13 +101,44 @@ class Agent:
             self.policy = Policy(np.random.rand(*self.config['state_space'], self.config['n_actions'])/1000, self.config['n_actions'])
             self.Q = np.random.rand(*self.config['state_space'], self.config['n_actions'])
             self.choice = 0
-        else:
-            self.eps = 0.3
-            self.eta = 0.1
-            self.alpha = 5e-6
-            self.whiten = True
+        elif self.env_name == 'kbca':
+            self.gma = 1
+            self.eps = 0.1
+            self.eta = 0.55
+            self.alpha = 6e-8
+            self.whiten = False
             self.get_state = lambda obs: self.get_state_kbc(obs, True)
-            self.policy = Policy(np.random.rand(*self.config['state_space'], self.config['n_actions'])/1000, self.config['n_actions'])
+            self.policy = Policy(np.random.rand(*self.config['state_space'], self.config['n_actions']), self.config['n_actions'])
+            # self.policy = LinearPolicy(
+            #     np.random.rand(self.config['n_actions'],self.config['dim_state'])/100,
+            #     np.random.rand(self.config['n_actions'])/100,
+            #     self.config['n_actions']
+            # )
+            self.Q = np.random.rand(*self.config['state_space'], self.config['n_actions'])/1000
+            self.choice = 1
+        elif self.env_name == 'kbcb':
+            self.gma = 1
+            self.eps = 0.1
+            self.eta = 0.55
+            self.alpha = 6e-8
+            self.whiten = False
+            self.get_state = lambda obs: self.get_state_kbc(obs, True)
+            self.policy = Policy(np.random.rand(*self.config['state_space'], self.config['n_actions']), self.config['n_actions'])
+            # self.policy = LinearPolicy(
+            #     np.random.rand(self.config['n_actions'],self.config['dim_state'])/100,
+            #     np.random.rand(self.config['n_actions'])/100,
+            #     self.config['n_actions']
+            # )
+            self.Q = np.random.rand(*self.config['state_space'], self.config['n_actions'])/1000
+            self.choice = 1
+        elif self.env_name == 'kbcc':
+            self.gma = 1
+            self.eps = 0.1
+            self.eta = 0.55
+            self.alpha = 5e-8
+            self.whiten = False
+            self.get_state = lambda obs: self.get_state_kbc(obs, True)
+            self.policy = Policy(np.random.rand(*self.config['state_space'], self.config['n_actions']), self.config['n_actions'])
             # self.policy = LinearPolicy(
             #     np.random.rand(self.config['n_actions'],self.config['dim_state'])/100,
             #     np.random.rand(self.config['n_actions'])/100,
@@ -162,14 +193,34 @@ class Agent:
         state = self.get_state(obs)
         self.states.append(state)
         self.n_step += 1
+        if self.env_name == 'kbca':
+            # self.eta = min(5e-6 * 2 ** self.n_step, 0.5)
+            self.eps = max(3 / (3 + self.n_step), 0.1)
+            if self.actions[-1] == 1:
+                reward += (0.5 ** (self.states[-2][0]) - self.gma * 0.5 ** (state[0])) * 1e10
+        
+        elif self.env_name == 'kbcb':
+            # self.eta = min(5e-6 * 2 ** self.n_step, 0.5)
+            self.eps = max(3 / (3 + self.n_step), 0.1)
+            if self.actions[-1] == 1:
+                reward += (0.5 ** (self.states[-2][0]) - self.gma * 0.5 ** (state[0])) * 1e8
+        
+        elif self.env_name == 'kbcc':
+            # self.eta = min(5e-6 * 2 ** self.n_step, 0.5)
+            self.eps = max(3 / (3 + self.n_step), 0.1)
+            if self.actions[-1] == 1:
+                reward += (0.5 ** (self.states[-2][0]) - self.gma * 0.5 ** (state[0])) * 1e9
+        
+        elif self.env_name == 'taxi':
+            self.eta = max(80 / (80 + self.n_step), 0.5)
+            self.eps = max(10 / (10 + self.n_step), 0.1)
+
         if self.choice:
             # if "kbc" in self.env_name and self.n_episode < 500:
             #     action = 1
             action, _ = self.policy.act(state)
             self.grads_log_p.append(self.policy.grad_log_p(state, action))
         else:
-            self.eta = max(80 / (80 + self.n_step), 0.5)
-            self.eps = max(10 / (10 + self.n_step), 0.1)
             self.Q[self.states[-2] + (self.actions[-1],)] = (1-self.eta)*self.Q[self.states[-2] + (self.actions[-1],)] + \
                     self.eta*(reward + self.gma*np.max(self.Q[state]))
 
@@ -194,6 +245,12 @@ class Agent:
                     self.G = (self.G - G_bar) / G_sigma
 
             for i in range(len(self.rewards)):
+                if self.env_name == 'kbca':
+                    self.alpha = min(1e-9 * 2 ** (i), 1e-7)
+                elif self.env_name == 'kbcb':
+                    self.alpha = min(1e-8 * 2 ** (i), 1e-6)
+                elif self.env_name == 'kbcc':
+                    self.alpha = min(1e-9 * 2 ** (i), 5e-6)
                 self.policy.update(self.states[i], self.actions[i], self.G[i], self.grads_log_p[i], self.alpha)
 
         return action
