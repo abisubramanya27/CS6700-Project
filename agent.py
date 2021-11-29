@@ -79,14 +79,15 @@ class Agent:
         self.n_step = 0
         self.n_episode = 0
         if self.env_name == 'acrobot':
+            self.gma = 1.0
             self.eps = 0.5
             self.eta = 0.8
-            self.alpha = 2e-3
-            self.whiten = True
+            self.alpha = 9e-5
+            self.whiten = False
             self.get_state = lambda obs: self.get_state_a(obs, False, False)
             # self.policy = Policy(np.zeros((*self.config['nbins'], self.config['n_actions'])), self.config['n_actions'])
             self.policy = LinearPolicy(
-                np.random.rand(self.config['n_actions'], self.config['dim_state'])/100,
+                np.random.rand(self.config['n_actions'], self.config['dim_state'])/1000,
                 np.random.rand(self.config['n_actions'])/100,
                 self.config['n_actions']
             )
@@ -99,7 +100,7 @@ class Agent:
             self.whiten = True
             self.get_state = self.get_state_t
             self.policy = Policy(np.random.rand(*self.config['state_space'], self.config['n_actions'])/1000, self.config['n_actions'])
-            self.Q = np.random.rand(*self.config['state_space'], self.config['n_actions'])
+            self.Q = np.zeros((*self.config['state_space'], self.config['n_actions']))
             self.choice = 0
         elif self.env_name == 'kbca':
             self.gma = 1
@@ -164,6 +165,8 @@ class Agent:
         self.states = [state]
         if self.choice:
             action, _ = self.policy.act(state)
+            if 'kbc' in self.env_name:
+                action = 1
             self.grads_log_p = [self.policy.grad_log_p(state, action)]
             self.rewards = []
             self.G = []
@@ -172,6 +175,9 @@ class Agent:
                 action = random.randint(0, self.config['n_actions']-1)
             else:
                 action = np.argmax(self.Q[state])
+            
+            if 'kbc' in self.env_name:
+                action = 1
 
         self.actions = [action]
         return action
@@ -203,17 +209,20 @@ class Agent:
             # self.eta = min(5e-6 * 2 ** self.n_step, 0.5)
             self.eps = max(3 / (3 + self.n_step), 0.1)
             if self.actions[-1] == 1:
-                reward += (0.5 ** (self.states[-2][0]) - self.gma * 0.5 ** (state[0])) * 1e8
+                reward += (0.5 ** (self.states[-2][0])) * 1e7
         
         elif self.env_name == 'kbcc':
             # self.eta = min(5e-6 * 2 ** self.n_step, 0.5)
             self.eps = max(3 / (3 + self.n_step), 0.1)
             if self.actions[-1] == 1:
-                reward += (0.5 ** (self.states[-2][0]) - self.gma * 0.5 ** (state[0])) * 1e9
+                reward += (0.5 ** (self.states[-2][0]) - self.gma * 0.5 ** (state[0])) * 1e8
         
         elif self.env_name == 'taxi':
             self.eta = max(80 / (80 + self.n_step), 0.5)
             self.eps = max(10 / (10 + self.n_step), 0.1)
+        
+        elif self.env_name == 'acrobot' and self.choice:
+            reward -= state[2] + state[0]
 
         if self.choice:
             # if "kbc" in self.env_name and self.n_episode < 500:
@@ -248,9 +257,12 @@ class Agent:
                 if self.env_name == 'kbca':
                     self.alpha = min(1e-9 * 2 ** (i), 1e-7)
                 elif self.env_name == 'kbcb':
-                    self.alpha = min(1e-8 * 2 ** (i), 1e-6)
+                    self.alpha = min(5e-8 * 2 ** (i), 1e-6)
                 elif self.env_name == 'kbcc':
-                    self.alpha = min(1e-9 * 2 ** (i), 5e-6)
+                    self.alpha = min(1e-8 * 2 ** (i), 1e-6)
+                elif self.env_name == 'acrobot':
+                    #self.alpha = max()
+                    pass
                 self.policy.update(self.states[i], self.actions[i], self.G[i], self.grads_log_p[i], self.alpha)
 
         return action
@@ -270,6 +282,9 @@ class Agent:
             action, _ = self.policy.act(state)
         else:
             action = np.argmax(self.Q[state])
+
+        if 'kbc' in self.env_name:
+            action = 1
 
         return action
 
