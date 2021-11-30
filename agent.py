@@ -209,9 +209,7 @@ class Agent:
             # self.eta = min(5e-6 * 2 ** self.n_step, 0.5)
             self.eps = max(3 / (3 + self.n_step), 0.1)
             if self.actions[-1] == 1:
-                reward += (0.5 ** (self.states[-2][0])) * 1e9
-            else:
-                reward += 1e2
+                reward += (0.5 ** (self.states[-2][0])) * 1e7
         
         elif self.env_name == 'kbcc':
             # self.eta = min(5e-6 * 2 ** self.n_step, 0.5)
