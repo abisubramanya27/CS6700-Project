@@ -21,16 +21,22 @@ def train(agent, env):
         obs, reward, done, info = env.step(action)
         action = agent.compute_action_train(obs, reward, done, info)
 
-def evaluate(agent, env):
+def evaluate(agent, env, ok=False):
     rewards = 0
     obs = env.reset()
     action = agent.register_reset_test(obs)
+    policy = [[obs, action]]
     done = False
     while not done:
         obs, reward, done, info = env.step(action)
+        policy[-1].append(reward)
         action = agent.compute_action_test(obs, reward, done, info)
         rewards += reward
+        policy += [[obs, action]]
 
+    if ok:
+        for pair in policy:
+            print(pair)
     return rewards
 
 
@@ -63,6 +69,6 @@ if __name__ == "__main__":
 
     rewards = []
     for i in tqdm(range(N_EVAL_EPISODES)):
-        rewards.append(evaluate(agent, env))
+        rewards.append(evaluate(agent, env, bool(i == N_EVAL_EPISODES-1)))
 
     print(f"Mean reward on your agent for {ENV_NAME} is {np.mean(rewards)}")
