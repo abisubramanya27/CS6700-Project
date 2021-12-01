@@ -82,7 +82,7 @@ class Agent:
             self.gma = 1
             self.eps = 0.5
             self.eta = 0.8
-            self.alpha = 9.2e-5
+            self.alpha = 1e-4
             self.whiten = False
             self.get_state = lambda obs: self.get_state_a(obs, False, False)
             # self.policy = Policy(np.zeros((*self.config['nbins'], self.config['n_actions'])), self.config['n_actions'])
@@ -226,8 +226,8 @@ class Agent:
         elif self.env_name == 'acrobot':
             theta1 = cos_sin_to_theta(state[0], state[1])
             theta2 = cos_sin_to_theta(state[2], state[3])
-            #reward -= (np.pi - abs(theta1) - abs(theta2)) - state[0])
-            reward -= state[0] + state[2]
+            # reward -= (abs(theta1) + abs(theta2)) * 0.1
+            # reward -= state[0] + state[2]
 
         if self.choice:
             # if "kbc" in self.env_name and self.n_episode < 500:
