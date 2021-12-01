@@ -82,13 +82,13 @@ class Agent:
             self.gma = 1
             self.eps = 0.5
             self.eta = 0.8
-            self.alpha = 5e-4
+            self.alpha = 8e-5
             self.whiten = False
             self.get_state = lambda obs: self.get_state_a(obs, False, False)
             # self.policy = Policy(np.zeros((*self.config['nbins'], self.config['n_actions'])), self.config['n_actions'])
             self.policy = LinearPolicy(
                 np.zeros((self.config['n_actions'], self.config['dim_state']))/1000,
-                np.random.rand(self.config['n_actions'])/100,
+                np.random.rand(self.config['n_actions'])/1000,
                 self.config['n_actions']
             )
             self.Q = np.random.rand(*self.config['nbins'], self.config['n_actions'])/1000
@@ -216,8 +216,8 @@ class Agent:
             self.eps = max(3 / (3 + self.n_step), 0.1)
             if self.actions[-1] == 1:
                 reward += (0.5 ** (self.states[-2][0])) * 1e8
-            else:
-                reward += 5e1
+            # else:
+            #     reward += 5e1
         
         elif self.env_name == 'taxi':
             self.eta = max(80 / (80 + self.n_step), 0.5)
@@ -226,7 +226,7 @@ class Agent:
         elif self.env_name == 'acrobot':
             theta1 = cos_sin_to_theta(state[0], state[1])
             theta2 = cos_sin_to_theta(state[2], state[3])
-            reward -= (np.sin(np.pi - abs(theta1) - abs(theta2)) + state[0]) * 0.01
+            reward += (np.cos(np.pi - abs(theta1) - abs(theta2)) - state[0]) * 0.5
             # reward -= state[0] + state[2]
 
         if self.choice:
