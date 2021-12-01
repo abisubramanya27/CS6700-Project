@@ -82,7 +82,7 @@ class Agent:
             self.gma = 1
             self.eps = 0.5
             self.eta = 0.8
-            self.alpha = 8e-5
+            self.alpha = 1e-4
             self.whiten = False
             self.get_state = lambda obs: self.get_state_a(obs, False, False)
             # self.policy = Policy(np.zeros((*self.config['nbins'], self.config['n_actions'])), self.config['n_actions'])
@@ -203,7 +203,7 @@ class Agent:
             # self.eta = min(5e-6 * 2 ** self.n_step, 0.5)
             self.eps = max(3 / (3 + self.n_step), 0.1)
             if self.actions[-1] == 1:
-                reward += (0.5 ** (self.states[-2][0]) - self.gma * 0.5 ** (state[0])) * 1e10
+                reward += (0.5 ** (self.states[-2][0])) * 1e9
         
         elif self.env_name == 'kbcb':
             # self.eta = min(5e-6 * 2 ** self.n_step, 0.5)
@@ -226,7 +226,7 @@ class Agent:
         elif self.env_name == 'acrobot':
             theta1 = cos_sin_to_theta(state[0], state[1])
             theta2 = cos_sin_to_theta(state[2], state[3])
-            reward += (np.cos(np.pi - abs(theta1) - abs(theta2)) - state[0]) * 0.5
+            reward += (np.cos(np.pi - abs(theta1) - abs(theta2)) - state[0]) * 0.09
             # reward -= state[0] + state[2]
 
         if self.choice:
@@ -260,7 +260,8 @@ class Agent:
 
             for i in range(len(self.rewards)):
                 if self.env_name == 'kbca':
-                    self.alpha = min(1e-9 * 2 ** (i), 1e-7)
+                    self.alpha = min(5e-9 * 2 ** (i), 1e-6)
+                    self.alpha = 1e-6
                 elif self.env_name == 'kbcb':
                     self.alpha = min(5e-8 * 2 ** (i), 1e-6)
                 elif self.env_name == 'kbcc':
